@@ -3,11 +3,14 @@ import Redis from 'ioredis';
 
 @Injectable()
 export class StatusService {
-  private redis = new Redis('redis://localhost:6379');
+  private redis = new Redis({
+    host: process.env.REDIS_HOST || 'localhost',
+    port: Number(process.env.REDIS_PORT) || 6379,
+  });
 
   async setStatus(
     jobId: string,
-    status: 'pending' | 'processing' | 'complete' | 'failed',
+    status: 'pending' | 'processing' | 'completed' | 'failed',
     result?: any,
   ): Promise<void> {
     const hashData: Record<string, string> = {

@@ -11,7 +11,6 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Queue } from 'bullmq';
 import { v4 as uuidv4 } from 'uuid';
-import { diskStorage } from 'multer';
 import { S3Service } from 'src/s3/s3.service';
 import { StatusService } from 'src/status/status.service';
 
@@ -24,18 +23,13 @@ export class UploadController {
   ) {}
 
   @Post()
-  @UseInterceptors(
-    FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './uploads',
-        filename: (req, file, cb) =>
-          cb(null, `${Date.now()}-${file.originalname}`),
-      }),
-    }),
-  )
+  @UseInterceptors(FileInterceptor('file'))
   async upload(
     @UploadedFile() file: Express.Multer.File,
   ): Promise<{ jobId: string }> {
+    if (!file) {
+      throw new Error('No file uploaded');
+    }
     const jobId = uuidv4();
     const rawKey = `${jobId}-${file.originalname}`;
 
@@ -58,18 +52,23 @@ export class UploadController {
 
   @Get(':jobId/status')
   async getStatus(@Param('jobId') jobId: string) {
-    const status = await this.statusService.getStatus(jobId);
-    if (!status) {
+    const statusData = await this.statusService.getStatus(jobId);
+    if (!statusData) {
       throw new NotFoundException(`Job with ID ${jobId} not found`);
     }
-    return status;
+    return { status: statusData.status };
   }
 
   @Get(':jobId/result')
   async getResult(@Param('jobId') jobId: string) {
-    const status = await this.statusService.getStatus(jobId);
-    if (!status || status.result !== 'completed')
+    const statusData = await this.statusService.getStatus(jobId);
+    if (!statusData) {
+      throw new NotFoundException(`Job with ID ${jobId} not found`);
+    }
+    if (statusData.status !== 'completed') {
       return { error: 'Job not completed' };
-    return status;
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    return { status: statusData.status, result: statusData.result };
   }
 }

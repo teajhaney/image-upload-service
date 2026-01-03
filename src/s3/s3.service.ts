@@ -4,7 +4,7 @@ import {
   PutObjectCommand,
   GetObjectCommand,
 } from '@aws-sdk/client-s3';
-// import { GetObjectOutput } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 @Injectable()
 export class S3Service {
@@ -13,8 +13,10 @@ export class S3Service {
   private processedBucket = process.env.PROCESSED_BUCKET;
 
   constructor() {
+    // Default to 'us-east-1' for MinIO/S3-compatible storage if REGION is not set
+    const region = process.env.REGION || 'us-east-1';
     this.s3Client = new S3Client({
-      region: process.env.REGION ?? '',
+      region,
       endpoint: process.env.ENDPOINT ?? '',
       credentials: {
         accessKeyId: process.env.ACCESS_KEY_ID ?? '',
@@ -40,6 +42,18 @@ export class S3Service {
     });
     const response = await this.s3Client.send(command);
     return (await response.Body?.transformToByteArray()) as Buffer;
+  }
+
+  async getPresignedUrl(
+    bucket: string,
+    key: string,
+    expiresIn = 3600,
+  ): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: bucket,
+      Key: key,
+    });
+    return await getSignedUrl(this.s3Client, command, { expiresIn });
   }
 
   getUrl(bucket: string, key: string): string {
