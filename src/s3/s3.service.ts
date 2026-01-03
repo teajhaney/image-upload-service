@@ -56,10 +56,6 @@ export class S3Service {
     return await getSignedUrl(this.s3Client, command, { expiresIn });
   }
 
-  getUrl(bucket: string, key: string): string {
-    return `http://localhost:9000/${bucket}/${key}`;
-  }
-
   getRawBucket(): string {
     if (!this.rawBucket) {
       throw new Error('RAW_BUCKET environment variable is not set');
