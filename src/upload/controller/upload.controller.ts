@@ -1,7 +1,14 @@
+import { InjectQueue } from '@nestjs/bullmq';
 import { Controller } from '@nestjs/common';
-import { UploadService } from './upload.service';
+import { Queue } from 'bullmq';
+import { S3Service } from 'src/s3/s3.service';
+import { StatusService } from 'src/status/status.service';
 
 @Controller('upload')
 export class UploadController {
-  constructor(private readonly uploadService: UploadService) {}
+  constructor(
+    private s3Service: S3Service,
+    private statusService: StatusService,
+    @InjectQueue('image-processing') private processingQueue: Queue,
+  ) {}
 }
