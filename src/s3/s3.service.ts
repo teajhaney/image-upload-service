@@ -45,4 +45,18 @@ export class S3Service {
   getUrl(bucket: string, key: string): string {
     return `http://localhost:9000/${bucket}/${key}`;
   }
+
+  getRawBucket(): string {
+    if (!this.rawBucket) {
+      throw new Error('RAW_BUCKET environment variable is not set');
+    }
+    return this.rawBucket;
+  }
+
+  getProcessedBucket(): string {
+    if (!this.processedBucket) {
+      throw new Error('PROCESSED_BUCKET environment variable is not set');
+    }
+    return this.processedBucket;
+  }
 }
