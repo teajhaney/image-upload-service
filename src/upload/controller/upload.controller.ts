@@ -1,6 +1,7 @@
 import { InjectQueue } from '@nestjs/bullmq';
 import {
   Controller,
+  ConflictException,
   Get,
   NotFoundException,
   Param,
@@ -11,9 +12,15 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Queue } from 'bullmq';
 import { v4 as uuidv4 } from 'uuid';
-import { S3Service } from 'src/s3/s3.service';
-import { StatusService } from 'src/status/status.service';
+import { S3Service } from '../../s3/s3.service';
+import { StatusService } from '../../status/status.service';
 
+export interface ApiResponse<T> {
+  statusCode: number;
+  message: string;
+  data: T;
+  timestamp: string;
+}
 @Controller('upload')
 export class UploadController {
   constructor(
@@ -26,7 +33,7 @@ export class UploadController {
   @UseInterceptors(FileInterceptor('file'))
   async upload(
     @UploadedFile() file: Express.Multer.File,
-  ): Promise<{ jobId: string }> {
+  ): Promise<ApiResponse<{ jobId: string }>> {
     if (!file) {
       throw new Error('No file uploaded');
     }
@@ -47,28 +54,47 @@ export class UploadController {
 
     await this.statusService.setStatus(jobId, 'pending');
 
-    return { jobId };
+    return {
+      statusCode: 201,
+      message: 'File uploaded successfully',
+      data: { jobId },
+      timestamp: new Date().toISOString(),
+    };
   }
 
   @Get(':jobId/status')
-  async getStatus(@Param('jobId') jobId: string) {
+  async getStatus(
+    @Param('jobId') jobId: string,
+  ): Promise<ApiResponse<{ status: string }>> {
     const statusData = await this.statusService.getStatus(jobId);
     if (!statusData) {
       throw new NotFoundException(`Job with ID ${jobId} not found`);
     }
-    return { status: statusData.status };
+    return {
+      statusCode: 200,
+      message: 'Job status retrieved',
+      data: { status: statusData.status },
+      timestamp: new Date().toISOString(),
+    };
   }
 
   @Get(':jobId/result')
-  async getResult(@Param('jobId') jobId: string) {
+  async getResult(
+    @Param('jobId') jobId: string,
+  ): Promise<ApiResponse<{ status: string; result: any }>> {
     const statusData = await this.statusService.getStatus(jobId);
     if (!statusData) {
       throw new NotFoundException(`Job with ID ${jobId} not found`);
     }
     if (statusData.status !== 'completed') {
-      return { error: 'Job not completed' };
+      throw new ConflictException('Job not completed');
     }
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    return { status: statusData.status, result: statusData.result };
+    return {
+      statusCode: 200,
+      message: 'Job result retrieved',
+      data: { status: statusData.status, result: statusData.result },
+      timestamp: new Date().toISOString(),
+    };
   }
 }

@@ -35,6 +35,7 @@ Before you begin, ensure you have the following installed:
 ### Installing Prerequisites
 
 #### Redis
+
 ```bash
 # macOS (using Homebrew)
 brew install redis
@@ -49,6 +50,7 @@ docker run -d -p 6379:6379 redis:latest
 ```
 
 #### MinIO
+
 ```bash
 # macOS (using Homebrew)
 brew install minio/stable/minio
@@ -66,17 +68,20 @@ docker run -d -p 9000:9000 -p 9001:9001 \
 ## Installation
 
 1. **Clone the repository**
+
 ```bash
 git clone <repository-url>
 cd image-uplaod-service
 ```
 
 2. **Install dependencies**
+
 ```bash
 npm install
 ```
 
 3. **Set up environment variables**
+
 ```bash
 cp .env.example .env
 # Edit .env with your configuration
@@ -113,6 +118,7 @@ Make sure the buckets specified in your `.env` file exist in MinIO:
 You can create buckets via MinIO Console (http://localhost:9001) or using the MinIO client.
 
 6. **Start the application**
+
 ```bash
 # Development mode
 npm run start:dev
@@ -135,9 +141,11 @@ Upload an image file for processing.
 **Content-Type**: `multipart/form-data`
 
 **Body**:
+
 - `file` (file): Image file to upload
 
 **Response**:
+
 ```json
 {
   "jobId": "550e8400-e29b-41d4-a716-446655440000"
@@ -145,6 +153,7 @@ Upload an image file for processing.
 ```
 
 **Example** (using curl):
+
 ```bash
 curl -X POST http://localhost:3000/upload \
   -F "file=@/path/to/your/image.jpg"
@@ -157,6 +166,7 @@ Check the status of an image processing job.
 **Endpoint**: `GET /upload/:jobId/status`
 
 **Response**:
+
 ```json
 {
   "status": "pending" | "processing" | "completed" | "failed"
@@ -164,6 +174,7 @@ Check the status of an image processing job.
 ```
 
 **Example**:
+
 ```bash
 curl http://localhost:3000/upload/550e8400-e29b-41d4-a716-446655440000/status
 ```
@@ -175,6 +186,7 @@ Retrieve the processed image URLs after job completion.
 **Endpoint**: `GET /upload/:jobId/result`
 
 **Response** (when completed):
+
 ```json
 {
   "status": "completed",
@@ -188,6 +200,7 @@ Retrieve the processed image URLs after job completion.
 ```
 
 **Response** (when not completed):
+
 ```json
 {
   "error": "Job not completed"
@@ -195,6 +208,7 @@ Retrieve the processed image URLs after job completion.
 ```
 
 **Example**:
+
 ```bash
 curl http://localhost:3000/upload/550e8400-e29b-41d4-a716-446655440000/result
 ```
@@ -259,12 +273,14 @@ test/                      # E2E tests
 ## Image Processing Details
 
 ### Processed Image
+
 - **Dimensions**: 800x600 (fit inside, maintains aspect ratio)
 - **Format**: JPEG
 - **Quality**: 85%
 - **Progressive**: Enabled
 
 ### Thumbnail
+
 - **Dimensions**: 150x150 (cover, crops to fit)
 - **Format**: JPEG
 - **Quality**: 85%
@@ -296,6 +312,7 @@ npm run test:e2e           # Run end-to-end tests
 ### Code Style
 
 This project uses:
+
 - **ESLint** for linting
 - **Prettier** for code formatting
 - **TypeScript** strict mode
@@ -304,17 +321,17 @@ This project uses:
 
 ### Environment Variables
 
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `PORT` | Server port | `3000` | No |
-| `REGION` | AWS region / MinIO region | `us-east-1` | No |
-| `ENDPOINT` | MinIO/S3 endpoint | - | Yes |
-| `ACCESS_KEY_ID` | S3 access key | - | Yes |
-| `SECRET_ACCESS_KEY` | S3 secret key | - | Yes |
-| `RAW_BUCKET` | Bucket for raw uploads | - | Yes |
-| `PROCESSED_BUCKET` | Bucket for processed images | - | Yes |
-| `REDIS_HOST` | Redis host | `localhost` | No |
-| `REDIS_PORT` | Redis port | `6379` | No |
+| Variable            | Description                 | Default     | Required |
+| ------------------- | --------------------------- | ----------- | -------- |
+| `PORT`              | Server port                 | `3000`      | No       |
+| `REGION`            | AWS region / MinIO region   | `us-east-1` | No       |
+| `ENDPOINT`          | MinIO/S3 endpoint           | -           | Yes      |
+| `ACCESS_KEY_ID`     | S3 access key               | -           | Yes      |
+| `SECRET_ACCESS_KEY` | S3 secret key               | -           | Yes      |
+| `RAW_BUCKET`        | Bucket for raw uploads      | -           | Yes      |
+| `PROCESSED_BUCKET`  | Bucket for processed images | -           | Yes      |
+| `REDIS_HOST`        | Redis host                  | `localhost` | No       |
+| `REDIS_PORT`        | Redis port                  | `6379`      | No       |
 
 ### MinIO Setup
 
@@ -328,6 +345,7 @@ This project uses:
 ### Redis Setup
 
 Ensure Redis is running and accessible. The service uses Redis for:
+
 - BullMQ job queues
 - Job status tracking
 
@@ -341,16 +359,19 @@ Ensure Redis is running and accessible. The service uses Redis for:
 ## Testing
 
 ### Unit Tests
+
 ```bash
 npm run test
 ```
 
 ### E2E Tests
+
 ```bash
 npm run test:e2e
 ```
 
 ### Test Coverage
+
 ```bash
 npm run test:cov
 ```
@@ -387,6 +408,7 @@ CMD ["npm", "run", "start:prod"]
 ### Environment Variables in Production
 
 Ensure all environment variables are set in your production environment. Consider using:
+
 - Environment variable management tools
 - Secret management services (AWS Secrets Manager, HashiCorp Vault)
 - Container orchestration platforms (Kubernetes ConfigMaps/Secrets)
@@ -396,23 +418,28 @@ Ensure all environment variables are set in your production environment. Conside
 ### Common Issues
 
 **1. "Region is missing" error**
+
 - Ensure `REGION` is set in `.env` (defaults to `us-east-1`)
 
 **2. "Access Denied" when accessing images**
+
 - Images use presigned URLs. Ensure URLs are generated correctly
 - Check MinIO bucket permissions
 - Verify `ACCESS_KEY_ID` and `SECRET_ACCESS_KEY` are correct
 
 **3. Redis connection errors**
+
 - Verify Redis is running: `redis-cli ping`
 - Check `REDIS_HOST` and `REDIS_PORT` in `.env`
 
 **4. Image processing fails**
+
 - Ensure Sharp can process the image format
 - Check file size limits
 - Verify MinIO buckets exist
 
 **5. Jobs stuck in "pending" status**
+
 - Check if BullMQ workers are running
 - Verify Redis connection
 - Check worker logs for errors
@@ -439,6 +466,7 @@ This project is private and unlicensed.
 ## Support
 
 For issues and questions:
+
 - Open an issue on the repository
 - Check existing documentation
 - Review NestJS documentation: https://docs.nestjs.com
